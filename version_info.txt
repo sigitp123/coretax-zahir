@@ -1,0 +1,24 @@
+# Version info untuk CoretaxFaktur.exe (dibaca PyInstaller --version-file).
+# Ubah filevers/prodvers dan string versi setiap rilis.
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=(1, 0, 0, 0),
+    prodvers=(1, 0, 0, 0),
+    mask=0x3f, flags=0x0, OS=0x40004, fileType=0x1, subtype=0x0, date=(0, 0)
+  ),
+  kids=[
+    StringFileInfo([
+      StringTable('040904B0', [
+        StringStruct('CompanyName', 'Delta Systech'),
+        StringStruct('FileDescription', 'Coretax Faktur Keluaran dari Zahir'),
+        StringStruct('FileVersion', '1.0.0.0'),
+        StringStruct('InternalName', 'CoretaxFaktur'),
+        StringStruct('LegalCopyright', 'Copyright (c) 2026 Delta Systech'),
+        StringStruct('OriginalFilename', 'CoretaxFaktur.exe'),
+        StringStruct('ProductName', 'Coretax Faktur'),
+        StringStruct('ProductVersion', '1.0.0.0')
+      ])
+    ]),
+    VarFileInfo([VarStruct('Translation', [1033, 1200])])
+  ]
+)
