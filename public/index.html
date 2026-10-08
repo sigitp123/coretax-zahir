@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zahir Coretax – Faktur Keluaran</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --hdr:#151515; --paper:#F2F5F9; --panel:#FFFFFF; --ink:#18202B; --label:#374151; --muted:#667085;
+  --line:#E1E6EE; --field:#D1D5DB; --blue:#0B5FA5; --blue-d:#084A82; --soft:#E6EEF8; --soft-d:#D3E2F4;
+  --ok:#15803D; --ok-bg:#DCFCE7; --bad:#B42318; --bad-bg:#FEE2E2; --warn:#7A4B00; --warn-bg:#FFF4D6; --idle:#E5E7EB;
+  --side:464px; --r:8px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html,body{margin:0;height:100%}
+body{font-family:"Plus Jakarta Sans",system-ui,sans-serif;font-size:14px;line-height:1.45;color:var(--ink);background:var(--paper);
+  display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:100vh}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+/* header */
+header{background:var(--hdr);display:flex;align-items:center;justify-content:space-between;padding:6px 18px 6px 10px}
+header img{height:64px;display:block}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 12px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill.idle{background:var(--idle);color:var(--label)} .pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)} .pill.busy{background:#DBEAFE;color:var(--blue)}
+.pill.warn{background:#FEF3C7;color:#B45309}
+
+/* layout */
+.layout{display:grid;grid-template-columns:var(--side) 1fr;min-height:0}
+aside{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:6px 22px 28px 18px}
+main{padding:18px 22px 0;display:flex;flex-direction:column;min-width:0;min-height:0}
+
+/* langkah */
+.step{display:grid;grid-template-columns:26px 1fr;column-gap:12px;margin-top:18px}
+.badge{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;font-size:12.5px;font-weight:700;background:var(--idle);color:var(--label)}
+.step.cur .badge{background:var(--blue);color:#fff} .step.done .badge{background:var(--ok);color:#fff}
+.rail{grid-row:2/4;justify-self:center;width:2px;background:var(--line);margin-top:6px}
+.step h2{margin:0;font-size:16px;font-weight:700;line-height:24px}
+.sub{grid-column:2;color:var(--muted);font-size:12.5px;min-height:18px;white-space:pre-line}
+.step.done .sub{color:var(--ok)}
+.body{grid-column:2;margin-top:10px;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:8px 10px;align-items:center}
+.body label{color:var(--label);font-size:13.5px}
+.body .full{grid-column:1/-1}
+.body .after{grid-column:2;margin-top:-4px}
+.row{display:flex;gap:8px;align-items:center;min-width:0}
+.row > input,.row > select{flex:1;min-width:0}
+.row > .pill{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.row > input.code{flex:0 0 84px}
+.row.wrap{flex-wrap:wrap;row-gap:6px}
+input[type=date]{padding:0 6px}
+input,select{height:36px;border:1px solid var(--field);border-radius:6px;background:#fff;padding:0 10px;width:100%;min-width:0}
+input:disabled,select:disabled{background:#F3F4F6;color:var(--muted)}
+input[readonly]{cursor:pointer}
+.hint{color:var(--muted);font-size:12px}
+
+/* tombol */
+.btn{height:36px;border:0;border-radius:6px;padding:0 16px;font-weight:600;cursor:pointer;white-space:nowrap;background:var(--soft);color:var(--blue)}
+.btn:hover:not(:disabled){background:var(--soft-d)}
+.btn.primary{background:var(--blue);color:#fff} .btn.primary:hover:not(:disabled){background:var(--blue-d)}
+.btn.small{height:32px;padding:0 12px;font-size:12.5px}
+.btn:disabled{background:var(--idle);color:var(--muted);cursor:default}
+.link{background:none;border:0;padding:0;color:var(--blue);font-size:12.5px;text-decoration:underline;cursor:pointer}
+.link + .link{margin-left:14px}
+
+/* area hasil */
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bar .spacer{flex:1}
+.strip{display:grid;grid-template-columns:repeat(4,1fr);background:var(--panel);border:1px solid var(--line);border-radius:var(--r);margin:14px 0 12px}
+.strip div{padding:10px 18px 12px}
+.strip div + div{border-left:1px solid var(--line)}
+.strip span{display:block;color:var(--label);font-size:12.5px}
+.strip b{display:block;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.warn{background:var(--warn-bg);color:var(--warn);border-radius:6px;padding:8px 14px;font-size:12.5px;margin-bottom:12px}
+.warn p{margin:2px 0} .warn p::before{content:"⚠  "}
+.tabs{display:flex;gap:2px}
+.tab{border:1px solid var(--line);border-bottom:0;background:#E5EAF1;color:var(--muted);font-weight:600;padding:8px 18px;border-radius:6px 6px 0 0;cursor:pointer}
+.tab[aria-selected=true]{background:#fff;color:var(--blue)}
+.tablewrap{flex:1;min-height:260px;background:#fff;border:1px solid var(--line);border-radius:0 6px 6px 6px;overflow:auto;position:relative}
+table{border-collapse:collapse;font-size:13px;white-space:nowrap}
+th{position:sticky;top:0;background:#E9EEF5;text-align:left;font-weight:600;padding:8px 12px;z-index:1}
+td{padding:6px 12px;border-top:1px solid #F0F2F5}
+tbody tr:nth-child(even){background:#F7F9FC}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+td.wide{max-width:320px;overflow:hidden;text-overflow:ellipsis}
+.empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--muted)}
+footer{background:var(--panel);border-top:1px solid var(--line);margin-top:14px;padding:7px 16px;font-size:12.5px;color:var(--label);display:flex;align-items:center;gap:12px}
+footer.ok{color:var(--ok)} footer.bad{color:var(--bad)}
+.spin{width:14px;height:14px;border:2px solid var(--soft-d);border-top-color:var(--blue);border-radius:50%;animation:sp .8s linear infinite;display:none}
+footer.busy .spin{display:block}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* dialog */
+dialog{border:0;border-radius:10px;padding:0;width:min(560px,94vw);box-shadow:0 20px 60px rgba(15,23,42,.25)}
+dialog::backdrop{background:rgba(15,23,42,.45)}
+dialog h3{margin:0;background:var(--hdr);color:#fff;padding:14px 20px;font-size:17px}
+.dlg{padding:18px 20px 20px;display:grid;gap:12px}
+.dlg .actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.dlg .actions .left{margin-right:auto;display:flex;gap:8px}
+.list{border:1px solid var(--field);border-radius:6px;height:320px;overflow:auto;padding:4px 0}
+.list label{display:flex;gap:10px;align-items:center;padding:5px 12px;cursor:pointer}
+.list label:hover{background:#F3F6FA}
+.list input{width:16px;height:16px}
+textarea{font-family:Consolas,monospace;font-size:13px;border:1px solid var(--field);border-radius:6px;padding:8px;min-height:110px;resize:vertical}
+.msg{font-size:12.5px;min-height:18px}.msg.bad{color:var(--bad)}.msg.ok{color:var(--ok)}
+.diag p{margin:4px 0;font-family:Consolas,monospace;font-size:13px}.diag .y{color:var(--ok)}.diag .x{color:var(--bad)}
+
+@media (max-width:900px){
+  body{display:block;height:auto}
+  .layout{grid-template-columns:1fr}
+  .tablewrap{flex:none;height:60vh}
+  footer{position:sticky;bottom:0;margin-top:16px}
+  .strip b{font-size:18px;white-space:nowrap}
+  aside{border-right:0;border-bottom:1px solid var(--line);padding:4px 16px 20px;overflow:visible}
+  main{padding:16px}
+  .strip{grid-template-columns:repeat(2,1fr)} .strip div:nth-child(3){border-left:0}
+  .strip div:nth-child(n+3){border-top:1px solid var(--line)}
+  header img{height:48px}
+}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+</style>
+</head>
+<body>
+<header>
+  <img src="/logo.png" alt="Zahir Coretax – laporan pajak dari Zahir Online">
+  <span id="conn" class="pill idle">Belum login</span>
+</header>
+
+<div class="layout">
+<aside>
+  <!-- 1 -->
+  <section class="step" id="s1">
+    <div class="badge">1</div><h2>Akun &amp; database</h2>
+    <div class="rail"></div><div class="sub"></div>
+    <form class="body" id="loginForm" autocomplete="on">
+      <label for="server" class="lg">Server</label>
+      <input id="server" class="lg" list="servers" placeholder="go.zahironline.com" autocomplete="url">
+      <datalist id="servers"></datalist>
+      <label for="email" class="lg">Email</label>
+      <input id="email" class="lg" type="email" autocomplete="username">
+      <label for="password" class="lg">Password</label>
+      <input id="password" class="lg" type="password" autocomplete="current-password">
+      <button id="btnLogin" class="btn primary full" type="submit">Login</button>
+      <label for="db">Database</label>
+      <select id="db" disabled><option value="">Login dulu</option></select>
+      <label>Registrasi</label>
+      <div class="row"><span id="lic" class="pill idle">Belum ada database</span><button type="button" id="btnReg" class="btn small">Registrasi...</button></div>
+    </form>
+  </section>
+  <!-- 2 -->
+  <section class="step" id="s2">
+    <div class="badge">2</div><h2>Periode &amp; filter</h2>
+    <div class="rail"></div><div class="sub"></div>
+    <div class="body">
+      <label for="npwp">NPWP Penjual</label>
+      <input id="npwp" inputmode="numeric" placeholder="16 digit" maxlength="20">
+      <label for="d1">Periode</label>
+      <div class="row"><input id="d1" type="date" aria-label="Tanggal awal"><span>–</span><input id="d2" type="date" aria-label="Tanggal akhir"></div>
+      <div class="after"><button class="link" type="button" data-month="0">Bulan ini</button><button class="link" type="button" data-month="-1">Bulan lalu</button></div>
+      <label for="cust">Customer</label>
+      <div class="row"><input id="cust" readonly value="(Semua customer)"><button type="button" id="btnCust" class="btn small">Pilih...</button></div>
+    </div>
+  </section>
+  <!-- 3 -->
+  <section class="step" id="s3">
+    <div class="badge">3</div><h2>Isian faktur Coretax</h2>
+    <div class="rail"></div><div class="sub"></div>
+    <div class="body">
+      <label for="trx">Kode Transaksi</label><select id="trx"></select>
+      <label for="ket">Ket. Tambahan</label><select id="ket"></select>
+      <label for="cap">Cap Fasilitas</label><select id="cap"></select>
+      <label for="kodeA">Kode default</label>
+      <div class="row wrap"><input id="kodeA" class="code" maxlength="6" inputmode="numeric" aria-label="Kode default barang"><span class="hint">barang</span>
+        <input id="kodeB" class="code" maxlength="6" inputmode="numeric" aria-label="Kode default jasa"><span class="hint">jasa</span></div>
+      <div class="after"><button class="link" type="button" id="btnRef">Perbarui daftar dari template DJP...</button>
+        <input type="file" id="refFile" accept=".xlsx,.xlsm" hidden></div>
+    </div>
+  </section>
+</aside>
+
+<main>
+  <div class="bar">
+    <button class="btn primary" id="btnPreview" disabled>▶ Preview</button>
+    <button class="btn" id="btnXlsx" disabled>Export Excel</button>
+    <button class="btn" id="btnXml" disabled>Export XML</button>
+    <span class="spacer"></span>
+    <button class="btn small" id="btnDiag" disabled>Tes akses database</button>
+  </div>
+  <div class="strip" aria-live="polite">
+    <div><span>Faktur</span><b id="tFak">–</b></div>
+    <div><span>Baris detail</span><b id="tDet">–</b></div>
+    <div><span>Total DPP</span><b id="tDpp">–</b></div>
+    <div><span>Total PPN</span><b id="tPpn">–</b></div>
+  </div>
+  <div class="warn" id="warn" hidden></div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-tab="faktur">Faktur</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="detail">DetailFaktur</button>
+  </div>
+  <div class="tablewrap"><table id="grid"></table><div class="empty" id="empty">Belum ada data<br>Klik ▶ Preview untuk menarik faktur pada periode ini</div></div>
+</main>
+</div>
+
+<footer id="status"><span class="spin"></span><span id="statusText">Login dan pilih database untuk mulai</span></footer>
+
+<dialog id="dlgReg"><h3>Registrasi database</h3><div class="dlg">
+  <div><b>1.</b> Kirim slug database ini ke admin</div>
+  <div class="row"><input id="regSlug" readonly><button class="btn small" id="regCopy" type="button">Salin</button></div>
+  <div><b>2.</b> Tempel kode registrasi dari admin</div>
+  <textarea id="regCode" spellcheck="false"></textarea>
+  <div class="msg" id="regMsg"></div>
+  <div class="actions"><button class="btn" value="cancel" formmethod="dialog" onclick="dlgReg.close()">Batal</button><button class="btn primary" id="regSave">Simpan &amp; aktifkan</button></div>
+</div></dialog>
+
+<dialog id="dlgCust"><h3>Pilih customer</h3><div class="dlg">
+  <input id="custQ" placeholder="Cari nama customer" aria-label="Cari customer">
+  <div class="list" id="custList"></div>
+  <div class="hint" id="custInfo"></div>
+  <div class="actions"><span class="left"><button class="btn small" id="custAll" type="button">Pilih semua yang tampil</button><button class="btn small" id="custNone" type="button">Kosongkan</button></span>
+    <button class="btn" onclick="dlgCust.close()" type="button">Batal</button><button class="btn primary" id="custApply" type="button">Terapkan</button></div>
+</div></dialog>
+
+<dialog id="dlgDiag"><h3>Tes akses database</h3><div class="dlg"><div class="diag" id="diagOut"></div>
+  <div class="actions"><button class="btn primary" onclick="dlgDiag.close()" type="button">Tutup</button></div></div></dialog>
+
+<script>
+const $ = id => document.getElementById(id);
+const ALL = "(Semua customer)", NONE = "(Tidak ada)";
+const S = { cfg:null, token:"", server:"", who:"", dbs:[], slug:"", lic:{ok:false}, customers:[], sel:new Set(), tab:"faktur", data:null, busy:0 };
+const store = { get(k,d){ try{ const v=localStorage.getItem("zc_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} },
+                set(k,v){ try{ localStorage.setItem("zc_"+k, JSON.stringify(v)); }catch(e){} } };
+
+function status(t, kind=""){ const f=$("status"); f.classList.remove("ok","bad"); if(kind) f.classList.add(kind); $("statusText").textContent=t; }
+function busy(on){ S.busy+=on?1:-1; $("status").classList.toggle("busy", S.busy>0); }
+function pill(el, text, kind){ el.className="pill "+kind; el.textContent=text; }
+const fmt = n => new Intl.NumberFormat("id-ID",{maximumFractionDigits:2}).format(n);
+const money = n => "Rp " + new Intl.NumberFormat("id-ID",{maximumFractionDigits:0}).format(n);
+const code = t => (t||"").split(" - ")[0].trim();
+
+async function api(path, body, raw=false){
+  busy(true);
+  try{
+    const r = await fetch(path, {method: body instanceof FormData || body ? "POST":"GET",
+      headers: body instanceof FormData ? {Authorization:"Bearer "+S.token} : {"Content-Type":"application/json", Authorization:"Bearer "+S.token},
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined});
+    if(!r.ok){ let m="HTTP "+r.status; try{ m=(await r.json()).error||m; }catch(e){} if(r.status===401 && S.token) logout(true); throw new Error(m); }
+    return raw ? r : r.json();
+  } finally { busy(false); }
+}
+
+/* ---------- referensi ---------- */
+function refs(){ const own=store.get("refs",{}); return {
+  trx: own.trx || S.cfg.kode_trx,
+  ket: {"07": own.ket07 || S.cfg.ket["07"], "08": own.ket08 || S.cfg.ket["08"]},
+  cap: {"07": own.cap07 || S.cfg.cap["07"], "08": own.cap08 || S.cfg.cap["08"]} }; }
+function fillSelect(sel, items, current, withNone){
+  sel.innerHTML=""; if(withNone) sel.add(new Option(NONE,""));
+  for(const [c,d] of items) sel.add(new Option(`${c} - ${d}`, c));
+  sel.value = items.some(([c])=>c===current) ? current : (withNone ? "" : items[0][0]);
+}
+function trxChanged(){
+  const r=refs(), k=$("trx").value, on=S.cfg.fasilitas.includes(k);
+  fillSelect($("ket"), on?r.ket[k]:[], store.get("ket",""), true);
+  fillSelect($("cap"), on?r.cap[k]:[], store.get("cap",""), true);
+  $("ket").disabled=$("cap").disabled=!on; save(); steps();
+}
+
+/* ---------- langkah ---------- */
+function steps(){
+  const npwp=$("npwp").value.replace(/\D/g,""), k=$("trx").value, on=S.cfg&&S.cfg.fasilitas.includes(k);
+  const done=[!!(S.token && S.slug && S.lic.ok), npwp.length===16 && $("d1").value && $("d2").value, !!k && (!on || ($("ket").value && $("cap").value))];
+  const sub=[ !S.token ? "Masuk dengan akun Zahir" : !S.slug ? `${S.who}\nPilih database yang akan diproses`
+              : !S.lic.ok ? `${S.who}\n${S.slug}: ${S.lic.message||"belum teregistrasi"}` : `${S.who}\n${S.slug}`,
+             done[1] ? `${$("d1").value} s/d ${$("d2").value}, ${$("cust").value===ALL?"semua customer":$("cust").value}` : "Isi NPWP penjual 16 digit dan periode",
+             done[2] ? `Kode transaksi ${k}` : on ? "Pilih Keterangan Tambahan dan Cap Fasilitas untuk kode 07/08" : "Pilih kode transaksi" ];
+  const cur=done.indexOf(false);
+  ["s1","s2","s3"].forEach((id,i)=>{ const el=$(id); el.classList.toggle("done",done[i]); el.classList.toggle("cur",i===cur);
+    el.querySelector(".badge").textContent=done[i]?"✓":i+1; el.querySelector(".sub").textContent=sub[i]; });
+  const ready=done[0];
+  ["btnPreview","btnXlsx","btnXml"].forEach(b=>$(b).disabled=!ready);
+  $("btnDiag").disabled=!(S.token && S.slug);
+  document.querySelectorAll("#loginForm .lg").forEach(e=>e.hidden=!!S.token);
+  $("btnLogin").textContent = S.token ? "Logout" : "Login";
+}
+
+/* ---------- pengaturan ---------- */
+function save(){
+  store.set("npwp",$("npwp").value.trim()); store.set("kode_a",$("kodeA").value.trim()); store.set("kode_b",$("kodeB").value.trim());
+  store.set("kode_trx",$("trx").value);
+  if(!$("ket").disabled){ store.set("ket",$("ket").value); store.set("cap",$("cap").value); }
+}
+function setMonth(off){
+  const t=new Date(); const y=t.getFullYear(), m=t.getMonth()+Number(off);
+  const a=new Date(y,m,1), b=new Date(y,m+1,0), iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  $("d1").value=iso(a); $("d2").value=iso(b); steps();
+}
+
+/* ---------- login & database ---------- */
+async function doLogin(e){
+  e.preventDefault();
+  if(S.token){ logout(); return; }
+  const server=$("server").value.trim()||S.cfg.default_server, email=$("email").value.trim(), password=$("password").value;
+  if(!email||!password){ status("Email dan password wajib diisi.","bad"); return; }
+  pill($("conn"),"Login...","busy"); status(`Login ke ${server}...`);
+  try{
+    const r=await api("/api/login",{server,email,password});
+    $("password").value=""; S.token=r.token; S.server=r.server; S.who=`${email} di ${r.server}`;
+    store.set("email",email); const sv=store.get("servers",[]); if(!sv.includes(r.server)){ sv.push(r.server); store.set("servers",sv); } store.set("server",r.server);
+    setDbs(r.databases); pill($("conn"),"Pilih database","busy");
+    status(r.databases.length ? `Login berhasil, ${r.databases.length} database. Pilih salah satu.` : "Login berhasil. Daftar database tidak tersedia; ketik slug di kolom Database.", "ok");
+  }catch(err){ pill($("conn"),"Login gagal","bad"); status(err.message,"bad"); }
+  steps();
+}
+function setDbs(list){
+  S.dbs=list; const sel=$("db"); sel.innerHTML=""; sel.disabled=false;
+  sel.add(new Option(list.length?"Pilih database":"Tidak ada daftar – isi slug manual",""));
+  for(const d of list) sel.add(new Option(`${d.name}  |  ${d.slug}`, d.slug));
+  if(!list.length) sel.add(new Option("Ketik slug...", "__manual"));
+}
+function logout(expired){
+  S.token=S.slug=S.who=""; S.lic={ok:false}; S.customers=[]; S.sel.clear(); S.data=null;
+  const sel=$("db"); sel.innerHTML=""; sel.add(new Option("Login dulu","")); sel.disabled=true;
+  pill($("conn"),"Belum login","idle"); pill($("lic"),"Belum ada database","idle"); $("cust").value=ALL; clearView();
+  status(expired?"Sesi berakhir. Silakan login ulang.":"Login dan pilih database untuk mulai", expired?"bad":""); steps();
+}
+async function pickDb(){
+  let slug=$("db").value;
+  if(slug==="__manual"){ slug=(prompt("Slug database (mis. namapt.zahironline.com)")||"").trim().toLowerCase(); if(!slug) return;
+    $("db").add(new Option(slug,slug)); $("db").value=slug; }
+  if(!slug) return;
+  S.slug=slug; S.lic={ok:false}; S.sel.clear(); $("cust").value=ALL; clearView(); steps();
+  pill($("conn"),"Menghubungkan...","busy"); pill($("lic"),"Memeriksa...","busy"); status(`Menghubungkan ke ${slug}...`);
+  try{
+    const r=await api("/api/connect",{server:S.server,slug,license:(store.get("licenses",{}))[slug]||""});
+    pill($("conn"),"Terhubung","ok"); setLic(r.license);
+    status(`Terhubung: ${slug}` + (r.license.ok?"":"  •  belum teregistrasi"), r.license.ok?"ok":"bad");
+    if(!r.license.ok && !(store.get("licenses",{}))[slug]) openReg();
+    api("/api/customers",{server:S.server,slug}).then(c=>{ if(S.slug===slug) S.customers=c.customers; }).catch(()=>{});
+  }catch(err){ S.slug=""; pill($("conn"),"Gagal terhubung","bad"); pill($("lic"),"–","idle"); status(err.message,"bad"); }
+  steps();
+}
+function setLic(l){ S.lic=l; const soon=l.expiry && (new Date(l.expiry)-new Date())/864e5<=14;
+  pill($("lic"), (l.ok?"✓ ":"✗ ")+l.message, l.ok?(soon?"warn":"ok"):"bad"); steps(); }
+
+/* ---------- registrasi ---------- */
+function openReg(){ if(!S.slug){ status("Login dan pilih database dulu.","bad"); return; }
+  $("regSlug").value=S.slug; $("regCode").value=(store.get("licenses",{}))[S.slug]||""; $("regMsg").textContent=""; $("dlgReg").showModal(); }
+async function saveReg(){
+  const c=$("regCode").value.trim(); $("regMsg").className="msg"; $("regMsg").textContent="Memeriksa...";
+  try{ const r=await api("/api/license",{slug:S.slug,code:c});
+    if(r.ok){ const l=store.get("licenses",{}); l[S.slug]=c; store.set("licenses",l); setLic(r); $("dlgReg").close(); status(`Registrasi aktif: ${S.slug}`,"ok"); }
+    else { $("regMsg").className="msg bad"; $("regMsg").textContent="Registrasi belum berhasil: "+r.message; } }
+  catch(err){ $("regMsg").className="msg bad"; $("regMsg").textContent=err.message; }
+}
+
+/* ---------- customer ---------- */
+function openCust(){
+  if(!S.customers.length){ status("Daftar customer belum tersedia. Pilih database dulu dan tunggu sampai terhubung.","bad"); return; }
+  S.tmp=new Set(S.sel); $("custQ").value=""; renderCust(); $("dlgCust").showModal(); $("custQ").focus();
+}
+function shownCust(){ const q=$("custQ").value.trim().toLowerCase(); return S.customers.filter(c=>c.name.toLowerCase().includes(q)); }
+function renderCust(){
+  const list=$("custList"), shown=shownCust(); list.innerHTML="";
+  for(const c of shown){ const l=document.createElement("label"); const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=S.tmp.has(c.id);
+    cb.onchange=()=>{ cb.checked?S.tmp.add(c.id):S.tmp.delete(c.id); custInfo(shown.length); };
+    l.append(cb, document.createTextNode(c.name)); list.append(l); }
+  custInfo(shown.length);
+}
+function custInfo(n){ $("custInfo").textContent=(S.tmp.size?`${S.tmp.size} dipilih`:"Belum ada yang dipilih = semua customer")+` · ${n} dari ${S.customers.length} ditampilkan`; }
+function applyCust(){ S.sel=new Set(S.tmp); const n=S.sel.size;
+  $("cust").value = !n ? ALL : n===1 ? S.customers.find(c=>S.sel.has(c.id)).name : `${n} customer dipilih`; $("dlgCust").close(); steps(); }
+
+/* ---------- preview / export ---------- */
+function job(){ return {server:S.server, slug:S.slug, license:(store.get("licenses",{}))[S.slug]||"",
+  d1:$("d1").value, d2:$("d2").value, npwp:$("npwp").value, kode_a:$("kodeA").value, kode_b:$("kodeB").value,
+  kode_trx:$("trx").value, ket:$("ket").disabled?"":$("ket").value, cap:$("cap").disabled?"":$("cap").value, cust_ids:[...S.sel]}; }
+async function preview(){
+  status("Menarik data...");
+  try{ const r=await api("/api/preview",job()); S.data=r; renderData(); status(`${r.totals.faktur} faktur, ${r.totals.detail} baris detail`,"ok"); }
+  catch(err){ status(err.message,"bad"); }
+}
+async function exportFile(fmt){
+  if($("npwp").value.replace(/\D/g,"").length!==16){ status("Isi NPWP Penjual 16 digit.","bad"); $("npwp").focus(); return; }
+  status(`Membuat file ${fmt.toUpperCase()}...`);
+  try{ const r=await api("/api/export/"+fmt, job(), true); const blob=await r.blob();
+    const name=(/filename="?([^"]+)"?/.exec(r.headers.get("Content-Disposition")||"")||[])[1]||`Faktur_Keluaran_Coretax.${fmt}`;
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    status(`File diunduh: ${name}`,"ok"); }
+  catch(err){ status(err.message,"bad"); }
+}
+function clearView(){ S.data=null; ["tFak","tDet","tDpp","tPpn"].forEach(i=>$(i).textContent="–"); $("warn").hidden=true; renderTable(); setTabs(); }
+function renderData(){ const t=S.data.totals; $("tFak").textContent=fmt(t.faktur); $("tDet").textContent=fmt(t.detail);
+  $("tDpp").textContent=money(t.dpp); $("tPpn").textContent=money(t.ppn);
+  const w=$("warn"); w.innerHTML=""; for(const x of S.data.warnings){ const p=document.createElement("p"); p.textContent=x; w.append(p); } w.hidden=!S.data.warnings.length;
+  setTabs(); renderTable(); }
+function setTabs(){ document.querySelectorAll(".tab").forEach(b=>{ const k=b.dataset.tab, base=k==="faktur"?"Faktur":"DetailFaktur";
+  b.textContent = S.data ? `${base} (${(k==="faktur"?S.data.faktur:S.data.detail).length})` : base; b.setAttribute("aria-selected", k===S.tab); }); }
+function renderTable(){
+  const cols = S.tab==="faktur"?S.cfg.faktur_cols:S.cfg.detail_cols, rows = S.data ? (S.tab==="faktur"?S.data.faktur:S.data.detail) : [];
+  const g=$("grid"); g.innerHTML=""; const thead=g.createTHead().insertRow();
+  for(const c of cols){ const th=document.createElement("th"); th.textContent=c; if(S.cfg.num_cols.includes(c)) th.className="n"; thead.append(th); }
+  const tb=g.createTBody();
+  for(const r of rows){ const tr=tb.insertRow(); for(const c of cols){ const td=tr.insertCell(); const v=r[c];
+    if(S.cfg.num_cols.includes(c) && typeof v==="number"){ td.className="n"; td.textContent=fmt(v); }
+    else { td.textContent = v==null ? "" : v; if(/Nama|Alamat/.test(c)){ td.className="wide"; td.title=td.textContent; } } } }
+  $("empty").hidden = rows.length>0;
+  $("empty").innerHTML = S.data ? "Tidak ada data pada periode ini" : "Belum ada data<br>Klik ▶ Preview untuk menarik faktur pada periode ini";
+}
+
+/* ---------- lain-lain ---------- */
+async function diag(){
+  status("Menguji akses ke tabel...");
+  try{ const r=await api("/api/diagnose",{server:S.server,slug:S.slug}); const out=$("diagOut"); out.innerHTML="";
+    for(const x of r.results){ const p=document.createElement("p"); p.className=x.ok?"y":"x"; p.textContent=(x.ok?"✓  ":"✗  ")+x.name+(x.ok?"":"   "+x.detail); out.append(p); }
+    const bad=r.results.filter(x=>!x.ok).map(x=>x.name), p=document.createElement("p");
+    p.textContent = !bad.length ? "Semua tabel bisa dibaca." : bad.length===r.results.length ? "Semua query ditolak: akun ini tidak punya izin zsql di database ini." : "Tabel yang ditolak: "+bad.join(", ");
+    out.append(p); $("dlgDiag").showModal(); status("Tes akses selesai"); }
+  catch(err){ status(err.message,"bad"); }
+}
+async function loadRef(file){
+  const fd=new FormData(); fd.append("file",file);
+  try{ const r=await api("/api/refs/parse",fd); const own=store.get("refs",{}); Object.assign(own,r.refs); store.set("refs",own);
+    fillSelect($("trx"), refs().trx, $("trx").value, false); trxChanged();
+    status("Referensi diperbarui: "+Object.entries(r.refs).map(([k,v])=>`${k} ${v.length} item`).join(", "),"ok"); }
+  catch(err){ status(err.message,"bad"); }
+}
+
+/* ---------- mulai ---------- */
+(async function init(){
+  S.cfg = await (await fetch("/api/config")).json();
+  $("server").value = store.get("server", S.cfg.default_server); $("email").value=store.get("email","");
+  for(const s of new Set([S.cfg.default_server, ...store.get("servers",[])])) $("servers").append(new Option(s));
+  $("npwp").value=store.get("npwp",""); $("kodeA").value=store.get("kode_a","000000"); $("kodeB").value=store.get("kode_b","000000");
+  fillSelect($("trx"), refs().trx, store.get("kode_trx","04"), false); trxChanged(); setMonth(0);
+  $("loginForm").addEventListener("submit", doLogin); $("db").addEventListener("change", pickDb);
+  $("btnReg").onclick=openReg; $("regSave").onclick=saveReg; $("regCopy").onclick=()=>navigator.clipboard.writeText(S.slug).then(()=>{$("regMsg").className="msg ok";$("regMsg").textContent="Slug disalin.";});
+  $("btnCust").onclick=openCust; $("cust").onclick=openCust; $("custQ").oninput=renderCust;
+  $("custAll").onclick=()=>{ shownCust().forEach(c=>S.tmp.add(c.id)); renderCust(); }; $("custNone").onclick=()=>{ S.tmp.clear(); renderCust(); }; $("custApply").onclick=applyCust;
+  document.querySelectorAll("[data-month]").forEach(b=>b.onclick=()=>setMonth(b.dataset.month));
+  $("trx").onchange=trxChanged; $("ket").onchange=$("cap").onchange=()=>{save();steps();};
+  ["npwp","kodeA","kodeB","d1","d2"].forEach(i=>$(i).addEventListener("input",()=>{save();steps();}));
+  $("btnPreview").onclick=preview; $("btnXlsx").onclick=()=>exportFile("xlsx"); $("btnXml").onclick=()=>exportFile("xml"); $("btnDiag").onclick=diag;
+  $("btnRef").onclick=()=>$("refFile").click(); $("refFile").onchange=e=>{ if(e.target.files[0]) loadRef(e.target.files[0]); e.target.value=""; };
+  document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{ S.tab=b.dataset.tab; setTabs(); renderTable(); });
+  renderTable(); steps();
+})();
+</script>
+</body>
+</html>
